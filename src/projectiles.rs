@@ -24,7 +24,10 @@ impl Plugin for ProjectilesPlugin {
                 .with_system(Self::process_collisions.after(Self::move_bullets))
                 .with_system(Self::remove_bullets.after(Self::move_bullets)),
         )
-        .add_system_set(SystemSet::on_exit(GameState::Round).with_system(Self::remove_bullets));
+        .add_system_set(
+            SystemSet::on_exit(GameState::Round)
+                .with_system(Self::remove_bullets),
+        );
     }
 }
 
@@ -38,7 +41,9 @@ impl ProjectilesPlugin {
         )>,
         time: Res<Time>,
     ) {
-        for (mut transform, mut bullet, mut collider, velocity) in bullet_query.iter_mut() {
+        for (mut transform, mut bullet, mut collider, velocity) in
+            bullet_query.iter_mut()
+        {
             let dt = time.delta_seconds();
 
             bullet.duration.tick(time.delta());
@@ -46,7 +51,8 @@ impl ProjectilesPlugin {
             transform.translation.x += bullet.direction.x * velocity.vx * dt;
             transform.translation.y += bullet.direction.y * velocity.vy * dt;
 
-            let bullet_size = common::ease_in_out_sine(bullet.duration.percent_left());
+            let bullet_size =
+                common::ease_in_out_sine(bullet.duration.percent_left());
             transform.scale = Vec3::new(bullet_size, bullet_size, 0.);
 
             collider.offset = Some(Vec2::new(
@@ -62,7 +68,13 @@ impl ProjectilesPlugin {
         mut commands: Commands,
     ) {
         for (e, collider, transform) in bullet_query.iter() {
-            Self::handle_collisions(e, transform, collider, &obstacle_query, &mut commands);
+            Self::handle_collisions(
+                e,
+                transform,
+                collider,
+                &obstacle_query,
+                &mut commands,
+            );
         }
     }
 
@@ -75,7 +87,8 @@ impl ProjectilesPlugin {
     ) {
         for (obstacle, collider, transform) in obstacle_query.iter() {
             let collision = collide(
-                bullet_transform.translation + bullet_collider.offset.unwrap().extend(0.),
+                bullet_transform.translation
+                    + bullet_collider.offset.unwrap().extend(0.),
                 (*bullet_collider).into(),
                 transform.translation,
                 collider.clone().into(),
@@ -90,7 +103,10 @@ impl ProjectilesPlugin {
         }
     }
 
-    fn remove_bullets(mut commands: Commands, bullets_query: Query<(Entity, &Bullet)>) {
+    fn remove_bullets(
+        mut commands: Commands,
+        bullets_query: Query<(Entity, &Bullet)>,
+    ) {
         for (e, bullet) in bullets_query.iter() {
             if bullet.duration.finished() {
                 commands.entity(e).despawn_recursive();

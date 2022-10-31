@@ -1,7 +1,9 @@
 use bevy::{prelude::*, sprite::collide_aabb::collide};
 use rand::Rng;
 
-use crate::{common::Collider, graphics::TexturesSheets, state::GameState, HEIGHT, WIDTH};
+use crate::{
+    common::Collider, graphics::TexturesSheets, state::GameState, HEIGHT, WIDTH,
+};
 
 #[derive(Component)]
 pub struct Obstacle;
@@ -11,7 +13,8 @@ pub struct ObstaclePlugin;
 impl Plugin for ObstaclePlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(
-            SystemSet::on_enter(GameState::Round).with_system(Self::setup_obstacles),
+            SystemSet::on_enter(GameState::Round)
+                .with_system(Self::setup_obstacles),
         );
     }
 }

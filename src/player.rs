@@ -41,13 +41,19 @@ impl Plugin for PlayerPlugin {
                 .with_system(Self::process_input)
                 .with_system(Self::process_mouse_movement)
                 .with_system(Self::process_mouse_input)
-                .with_system(Self::cursor_fire_cooldown.after(Self::process_mouse_input)),
+                .with_system(
+                    Self::cursor_fire_cooldown.after(Self::process_mouse_input),
+                ),
         );
     }
 }
 
 impl PlayerPlugin {
-    fn spawn_cursor(mut commands: Commands, mut windows: ResMut<Windows>, ts: Res<TexturesSheets>) {
+    fn spawn_cursor(
+        mut commands: Commands,
+        mut windows: ResMut<Windows>,
+        ts: Res<TexturesSheets>,
+    ) {
         let window = windows.get_primary_mut().unwrap();
 
         window.set_cursor_visibility(false);
@@ -62,7 +68,11 @@ impl PlayerPlugin {
             .spawn_bundle(SpriteSheetBundle {
                 sprite,
                 texture_atlas: ts.ui.clone(),
-                transform: Transform::from_xyz(cursor_pos.x, cursor_pos.y + 95., 2.),
+                transform: Transform::from_xyz(
+                    cursor_pos.x,
+                    cursor_pos.y + 95.,
+                    2.,
+                ),
                 ..Default::default()
             })
             .insert(Name::new("Cursor"))
@@ -92,7 +102,10 @@ impl PlayerPlugin {
             .insert(Name::new("Player"));
     }
 
-    fn cursor_fire_cooldown(mut cursor_query: Query<&mut Cursor>, time: Res<Time>) {
+    fn cursor_fire_cooldown(
+        mut cursor_query: Query<&mut Cursor>,
+        time: Res<Time>,
+    ) {
         let mut cursor = cursor_query.single_mut();
         if cursor.fired {
             cursor.rate.tick(time.delta());
@@ -106,8 +119,16 @@ impl PlayerPlugin {
         keyboard: Res<Input<KeyCode>>,
         time: Res<Time>,
         mut cursor_query: Query<&mut Cursor>,
-        mut player_query: Query<(&mut Transform, &Velocity, &Collider, &mut Player)>,
-        obstacles_query: Query<(&Transform, &Collider), (Without<Player>, With<Obstacle>)>,
+        mut player_query: Query<(
+            &mut Transform,
+            &Velocity,
+            &Collider,
+            &mut Player,
+        )>,
+        obstacles_query: Query<
+            (&Transform, &Collider),
+            (Without<Player>, With<Obstacle>),
+        >,
     ) {
         let mut cursor = cursor_query.single_mut();
 
@@ -126,10 +147,19 @@ impl PlayerPlugin {
     fn handle_input(
         keyboard: &Input<KeyCode>,
         dt: f32,
-        player_query: &mut Query<(&mut Transform, &Velocity, &Collider, &mut Player)>,
-        obstacles_query: &Query<(&Transform, &Collider), (Without<Player>, With<Obstacle>)>,
+        player_query: &mut Query<(
+            &mut Transform,
+            &Velocity,
+            &Collider,
+            &mut Player,
+        )>,
+        obstacles_query: &Query<
+            (&Transform, &Collider),
+            (Without<Player>, With<Obstacle>),
+        >,
     ) {
-        let (mut transform, velocity, collider, mut player) = player_query.single_mut();
+        let (mut transform, velocity, collider, mut player) =
+            player_query.single_mut();
 
         player.just_moved = false;
 
@@ -175,7 +205,10 @@ impl PlayerPlugin {
     fn check_collisions(
         target_pos: Vec3,
         target_collider: Collider,
-        obstacles_query: &Query<(&Transform, &Collider), (Without<Player>, With<Obstacle>)>,
+        obstacles_query: &Query<
+            (&Transform, &Collider),
+            (Without<Player>, With<Obstacle>),
+        >,
     ) -> bool {
         for (transform, collider) in obstacles_query.iter() {
             let collision = collide(
@@ -211,11 +244,16 @@ impl PlayerPlugin {
 
             let target_collider = input_target_query.single();
 
-            let direction = Vec2::new(cursor.computed_angle.cos(), cursor.computed_angle.sin());
+            let direction = Vec2::new(
+                cursor.computed_angle.cos(),
+                cursor.computed_angle.sin(),
+            );
 
             let mut transform: Transform = Transform::from_xyz(
-                cursor.last_target_pos.x + direction.x * (target_collider.width / 2.),
-                cursor.last_target_pos.y + direction.y * (target_collider.height / 2.),
+                cursor.last_target_pos.x
+                    + direction.x * (target_collider.width / 2.),
+                cursor.last_target_pos.y
+                    + direction.y * (target_collider.height / 2.),
                 1.,
             );
 
@@ -248,17 +286,27 @@ impl PlayerPlugin {
 
     fn process_mouse_movement(
         mut cursor_query: Query<(&mut Transform, &mut Cursor)>,
-        mut input_target_query: Query<&mut Transform, (Without<Cursor>, With<Player>)>,
+        mut input_target_query: Query<
+            &mut Transform,
+            (Without<Cursor>, With<Player>),
+        >,
         mut cursor_evr: EventReader<CursorMoved>,
     ) {
         for ev in cursor_evr.iter() {
-            Self::handle_mouse_movement(&mut cursor_query, &mut input_target_query, ev.position);
+            Self::handle_mouse_movement(
+                &mut cursor_query,
+                &mut input_target_query,
+                ev.position,
+            );
         }
     }
 
     fn handle_mouse_movement(
         cursor_query: &mut Query<(&mut Transform, &mut Cursor)>,
-        input_target_query: &mut Query<&mut Transform, (Without<Cursor>, With<Player>)>,
+        input_target_query: &mut Query<
+            &mut Transform,
+            (Without<Cursor>, With<Player>),
+        >,
         mouse_pos: Vec2,
     ) {
         let (mut pos, mut cursor) = cursor_query.single_mut();
@@ -269,7 +317,8 @@ impl PlayerPlugin {
         let target_pos = target.translation.truncate();
         cursor.last_target_pos = target_pos;
 
-        cursor.computed_angle = f32::atan2(mouse_pos.y - target_pos.y, mouse_pos.x - target_pos.x);
+        cursor.computed_angle =
+            f32::atan2(mouse_pos.y - target_pos.y, mouse_pos.x - target_pos.x);
 
         let diff = mouse_pos - target_pos;
         let y_axis = Vec2::new(0.0, 1.0);
