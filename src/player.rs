@@ -31,13 +31,13 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(
-            SystemSet::on_enter(GameState::Round)
+            SystemSet::on_enter(GameState::Level)
                 .with_system(Self::spawn_cursor)
                 .with_system(Self::spawn_player),
         );
 
         app.add_system_set(
-            SystemSet::on_update(GameState::Round)
+            SystemSet::on_update(GameState::Level)
                 .with_system(Self::process_input)
                 .with_system(Self::process_mouse_movement)
                 .with_system(Self::process_mouse_input)

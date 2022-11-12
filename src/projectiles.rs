@@ -19,13 +19,13 @@ pub struct ProjectilesPlugin;
 impl Plugin for ProjectilesPlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(
-            SystemSet::on_update(GameState::Round)
+            SystemSet::on_update(GameState::Level)
                 .with_system(Self::move_bullets)
                 .with_system(Self::process_collisions.after(Self::move_bullets))
                 .with_system(Self::remove_bullets.after(Self::move_bullets)),
         )
         .add_system_set(
-            SystemSet::on_exit(GameState::Round)
+            SystemSet::on_exit(GameState::Level)
                 .with_system(Self::remove_bullets),
         );
     }

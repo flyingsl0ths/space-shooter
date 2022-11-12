@@ -40,7 +40,7 @@ fn main() {
             scale_factor_override: Some(1.0),
             ..Default::default()
         })
-        .add_state(GameState::Round)
+        .add_state(GameState::Level)
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup_camera)
         .add_plugin(GraphicsPlugin)

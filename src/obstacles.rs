@@ -13,7 +13,7 @@ pub struct ObstaclePlugin;
 impl Plugin for ObstaclePlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(
-            SystemSet::on_enter(GameState::Round)
+            SystemSet::on_enter(GameState::Level)
                 .with_system(Self::setup_obstacles),
         );
     }
