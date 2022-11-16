@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 
 pub const BG_COLOR: &'static str = "272034";
+pub const SPACESHIP_RED: &'static str = "ac3939";
+pub const WHITE: &'static str = "ffffff";
 
 pub struct GraphicsPlugin;
 
@@ -34,12 +36,16 @@ fn load_texture_sheets(
     let ui = asset_server.load("ui.png");
 
     let entities = TextureAtlas::from_grid(entities, Vec2::new(99., 91.), 1, 9);
+
     let obstacles =
         TextureAtlas::from_grid(obstacles, Vec2::new(120., 98.), 1, 4);
+
     let obstacles2 =
         TextureAtlas::from_grid(obstacles2, Vec2::new(45., 43.), 1, 6);
+
     let projectiles =
         TextureAtlas::from_grid(projectiles, Vec2::new(13., 37.), 1, 2);
+
     let ui = TextureAtlas::from_grid(ui, Vec2::new(33., 26.), 1, 12);
 
     let entities = texture_atlases.add(entities);

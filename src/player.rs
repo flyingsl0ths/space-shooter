@@ -2,8 +2,8 @@ use bevy::prelude::*;
 use bevy::sprite::collide_aabb::collide;
 
 use crate::{
-    common::{Collider, Velocity},
-    graphics::TexturesSheets,
+    common::{out_of_bounds_x, out_of_bounds_y, Collider, Velocity},
+    graphics::{self, TexturesSheets},
     obstacles::Obstacle,
     projectiles::Bullet,
     state::GameState,
@@ -32,6 +32,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(
             SystemSet::on_enter(GameState::Level)
+                .with_system(Self::setup_hud)
                 .with_system(Self::spawn_cursor)
                 .with_system(Self::spawn_player),
         );
@@ -49,6 +50,82 @@ impl Plugin for PlayerPlugin {
 }
 
 impl PlayerPlugin {
+    fn setup_hud(mut commands: Commands, ts: Res<TexturesSheets>) {
+        const SPRITE_SIZE_X: f32 = 26. + 12.;
+        const HUD_Y: f32 = HEIGHT - SPRITE_SIZE_X;
+        const SPRITE_SIZE_Y: f32 = 33. + 5.;
+        const HUD_X: f32 = SPRITE_SIZE_Y / 2. + 10.;
+
+        let mut sprite = TextureAtlasSprite::new(10);
+        sprite.custom_size = Some(Vec2::new(SPRITE_SIZE_X, SPRITE_SIZE_Y));
+        commands.spawn_bundle(SpriteSheetBundle {
+            sprite,
+            texture_atlas: ts.ui.clone(),
+            transform: Transform::from_xyz(HUD_X, HUD_Y, 2.),
+            ..Default::default()
+        });
+
+        let mut sprite = TextureAtlasSprite::new(0);
+        sprite.custom_size = Some(Vec2::new(SPRITE_SIZE_X, SPRITE_SIZE_Y));
+        commands.spawn_bundle(SpriteSheetBundle {
+            sprite,
+            texture_atlas: ts.ui.clone(),
+            transform: Transform::from_xyz(
+                HUD_X + SPRITE_SIZE_X + 3.5,
+                HUD_Y,
+                2.,
+            ),
+            ..Default::default()
+        });
+
+        let mut sprite = TextureAtlasSprite::new(1);
+        sprite.custom_size = Some(Vec2::new(SPRITE_SIZE_X, SPRITE_SIZE_Y));
+        commands.spawn_bundle(SpriteSheetBundle {
+            sprite,
+            texture_atlas: ts.ui.clone(),
+            transform: Transform::from_xyz(
+                HUD_X + SPRITE_SIZE_X * 2.,
+                HUD_Y,
+                2.,
+            ),
+            ..Default::default()
+        });
+
+        const RECT_SIZE: f32 = 5.;
+        const HEALTH_BAR_X: f32 = HUD_X + (SPRITE_SIZE_X * 5.);
+        const HEALTH_BAR_Y: f32 = HUD_Y;
+
+        commands.spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                color: Color::hex(graphics::WHITE).unwrap(),
+                custom_size: Some(Vec2::new(
+                    SPRITE_SIZE_X * RECT_SIZE,
+                    SPRITE_SIZE_Y,
+                )),
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(HEALTH_BAR_X, HEALTH_BAR_Y, 2.),
+            ..Default::default()
+        });
+
+        commands.spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                color: Color::hex(graphics::SPACESHIP_RED).unwrap(),
+                custom_size: Some(Vec2::new(
+                    SPRITE_SIZE_X * RECT_SIZE * 0.90,
+                    SPRITE_SIZE_Y * 0.65,
+                )),
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(
+                HEALTH_BAR_X + 0.80,
+                HEALTH_BAR_Y,
+                3.,
+            ),
+            ..Default::default()
+        });
+    }
+
     fn spawn_cursor(
         mut commands: Commands,
         mut windows: ResMut<Windows>,
