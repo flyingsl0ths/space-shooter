@@ -20,7 +20,7 @@ pub struct Player {
 #[reflect(Component)]
 pub struct Cursor {
     actual_angle: f32,
-    computed_angle: f32,
+    pub computed_angle: f32,
     fired: bool,
     last_target_pos: Vec2,
     rate: Timer,
@@ -130,8 +130,6 @@ impl PlayerPlugin {
             (Without<Player>, With<Obstacle>),
         >,
     ) {
-        let mut cursor = cursor_query.single_mut();
-
         Self::handle_input(
             &keyboard,
             time.delta_seconds(),
@@ -141,7 +139,8 @@ impl PlayerPlugin {
 
         let (transform, ..) = player_query.single();
 
-        cursor.last_target_pos = transform.translation.truncate();
+        cursor_query.single_mut().last_target_pos =
+            transform.translation.truncate();
     }
 
     fn handle_input(
@@ -186,7 +185,9 @@ impl PlayerPlugin {
         }
 
         let target = transform.translation + Vec3::new(offset_x, 0., 0.);
-        if !Self::check_collisions(target, *collider, &obstacles_query) {
+        if !(Self::check_collisions(target, *collider, &obstacles_query)
+            || out_of_bounds_x(target.x, collider.width / 2.))
+        {
             transform.translation = target;
             if offset_x != 0. {
                 player.just_moved = true;
@@ -194,7 +195,9 @@ impl PlayerPlugin {
         }
 
         let target = transform.translation + Vec3::new(0., offset_y, 0.);
-        if !Self::check_collisions(target, *collider, &obstacles_query) {
+        if !(Self::check_collisions(target, *collider, &obstacles_query)
+            || out_of_bounds_y(target.y, collider.height / 2.))
+        {
             transform.translation = target;
             if offset_y != 0. {
                 player.just_moved = true;
