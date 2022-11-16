@@ -2,7 +2,9 @@ use bevy::{prelude::*, sprite::collide_aabb::collide};
 
 use crate::{
     common::{self, Collider},
-    obstacles::Obstacle,
+    graphics::TexturesSheets,
+    obstacles::{spawn_small_obstacles, Obstacle},
+    player::Cursor,
     state::GameState,
 };
 
@@ -53,6 +55,7 @@ impl ProjectilesPlugin {
 
             let bullet_size =
                 common::ease_in_out_sine(bullet.duration.percent_left());
+
             transform.scale = Vec3::new(bullet_size, bullet_size, 0.);
 
             collider.offset = Some(Vec2::new(
@@ -64,16 +67,24 @@ impl ProjectilesPlugin {
 
     fn process_collisions(
         bullet_query: Query<(Entity, &Collider, &Transform), With<Bullet>>,
-        obstacle_query: Query<(Entity, &Collider, &Transform), With<Obstacle>>,
+        obstacle_query: Query<(Entity, &Collider, &Transform, &Obstacle)>,
+        cursor_query: Query<&Cursor>,
         mut commands: Commands,
+        ts: Res<TexturesSheets>,
     ) {
-        for (e, collider, transform) in bullet_query.iter() {
+        let cursor = cursor_query.single();
+        for (e, collider, transform) in bullet_query
+            .iter()
+            .filter(|(_, _, transform)| transform.scale.x >= 0.15)
+        {
             Self::handle_collisions(
                 e,
                 transform,
                 collider,
                 &obstacle_query,
                 &mut commands,
+                &ts,
+                cursor.computed_angle,
             );
         }
     }
@@ -82,10 +93,12 @@ impl ProjectilesPlugin {
         bullet: Entity,
         bullet_transform: &Transform,
         bullet_collider: &Collider,
-        obstacle_query: &Query<(Entity, &Collider, &Transform), With<Obstacle>>,
+        obstacle_query: &Query<(Entity, &Collider, &Transform, &Obstacle)>,
         commands: &mut Commands,
+        ts: &TexturesSheets,
+        angle: f32,
     ) {
-        for (obstacle, collider, transform) in obstacle_query.iter() {
+        for (e, collider, transform, obstacle) in obstacle_query.iter() {
             let collision = collide(
                 bullet_transform.translation
                     + bullet_collider.offset.unwrap().extend(0.),
@@ -96,8 +109,17 @@ impl ProjectilesPlugin {
             .is_some();
 
             if collision {
-                commands.entity(obstacle).despawn_recursive();
+                commands.entity(e).despawn_recursive();
                 commands.entity(bullet).despawn_recursive();
+
+                if obstacle.can_split {
+                    spawn_small_obstacles(
+                        commands,
+                        ts,
+                        transform.translation.truncate(),
+                        angle,
+                    );
+                }
                 break;
             }
         }
