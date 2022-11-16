@@ -21,10 +21,11 @@ impl From<Collider> for Vec2 {
     }
 }
 
-// pub fn ease_out_sine(x: f32) -> f32 {
-//     ((x * std::f32::consts::PI) / 2.).sin()
-// }
+pub fn ease_out_sine(x: f32) -> f32 {
+    ((x * std::f32::consts::PI) / 2.).sin()
+}
 
 pub fn ease_in_out_sine(x: f32) -> f32 {
     -((std::f32::consts::PI * x).cos() - 1.) / 2.
 }
+

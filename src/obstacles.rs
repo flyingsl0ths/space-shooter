@@ -2,11 +2,23 @@ use bevy::{prelude::*, sprite::collide_aabb::collide};
 use rand::Rng;
 
 use crate::{
-    common::Collider, graphics::TexturesSheets, state::GameState, HEIGHT, WIDTH,
+    common::{self, Collider, Velocity},
+    graphics::TexturesSheets,
+    state::GameState,
+    HEIGHT, WIDTH,
 };
 
 #[derive(Component)]
-pub struct Obstacle;
+pub struct Obstacle {
+    pub can_split: bool,
+}
+
+#[derive(Component)]
+pub struct MovingObstacle {
+    direction: Vec2,
+    duration: Timer,
+    angle: f32,
+}
 
 pub struct ObstaclePlugin;
 
@@ -15,6 +27,10 @@ impl Plugin for ObstaclePlugin {
         app.add_system_set(
             SystemSet::on_enter(GameState::Level)
                 .with_system(Self::setup_obstacles),
+        )
+        .add_system_set(
+            SystemSet::on_update(GameState::Level)
+                .with_system(Self::move_obstacles),
         );
     }
 }
@@ -22,10 +38,10 @@ impl Plugin for ObstaclePlugin {
 impl ObstaclePlugin {
     fn setup_obstacles(mut commands: Commands, ts: Res<TexturesSheets>) {
         let mut rng = rand::thread_rng();
-        let total: u32 = rng.gen_range(3..14);
+        let total: u32 = rng.gen_range(5..=15);
 
         for _ in 0..total {
-            let sprite_index = rng.gen_range(0..4);
+            let sprite_index = rng.gen_range(0..=3);
 
             let collider = Self::for_large_obstacle(sprite_index).unwrap();
 
@@ -59,8 +75,42 @@ impl ObstaclePlugin {
                     transform,
                     ..Default::default()
                 })
-                .insert(Obstacle)
+                .insert(Obstacle { can_split: true })
                 .insert(collider);
+        }
+    }
+
+    fn move_obstacles(
+        mut obstacles_query: Query<(
+            &mut Transform,
+            &mut MovingObstacle,
+            &Velocity,
+        )>,
+        time: Res<Time>,
+    ) {
+        for (mut transform, mut mv_obs, velocity) in obstacles_query
+            .iter_mut()
+            .filter(|(_, mv_obs, _)| !mv_obs.duration.finished())
+        {
+            let MovingObstacle {
+                direction,
+                duration,
+                angle,
+            } = mv_obs.as_mut();
+
+            duration.tick(time.delta());
+
+            let dt = time.delta_seconds();
+
+            *angle += *angle * dt;
+
+            transform.rotation = Quat::from_rotation_z(*angle);
+
+            transform.translation.x +=
+                common::ease_out_sine(direction.x * velocity.vx * dt);
+
+            transform.translation.y +=
+                common::ease_out_sine(direction.y * velocity.vy * dt);
         }
     }
 
@@ -134,5 +184,55 @@ impl ObstaclePlugin {
 
             _ => None,
         }
+    }
+}
+
+pub fn spawn_small_obstacles(
+    commands: &mut Commands,
+    ts: &TexturesSheets,
+    initial_pos: Vec2,
+    angle: f32,
+) {
+    let mut rng = rand::thread_rng();
+
+    let total: u32 = rng.gen_range(3..=6);
+
+    for _ in 0..total {
+        let sprite_index = rng.gen_range(0..=5);
+
+        let collider =
+            ObstaclePlugin::for_small_obstacle(sprite_index).unwrap();
+
+        let sprite = TextureAtlasSprite::new(sprite_index);
+
+        let mut offset = rng.gen_range(1..=100) as f32 / 100.;
+
+        let angle = angle + offset;
+
+        let direction = Vec2::new(angle.cos(), angle.sin());
+
+        let transform = Transform::from_xyz(
+            initial_pos.x + offset,
+            initial_pos.y + offset,
+            1.,
+        );
+
+        offset += 1.;
+
+        commands
+            .spawn_bundle(SpriteSheetBundle {
+                sprite,
+                texture_atlas: ts.obstacles2.clone(),
+                transform,
+                ..Default::default()
+            })
+            .insert(MovingObstacle {
+                direction,
+                duration: Timer::from_seconds(offset, false),
+                angle: offset,
+            })
+            .insert(Obstacle { can_split: false })
+            .insert(Velocity { vx: 90., vy: 90. })
+            .insert(collider);
     }
 }
