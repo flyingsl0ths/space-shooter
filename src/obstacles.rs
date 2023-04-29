@@ -2,10 +2,10 @@ use bevy::{prelude::*, sprite::collide_aabb::collide};
 use rand::Rng;
 
 use crate::{
-    common::{self, Collider, Velocity},
+    common::{Collider, Velocity},
     graphics::TexturesSheets,
     state::GameState,
-    HEIGHT, WIDTH,
+    utils, HEIGHT, WIDTH,
 };
 
 #[derive(Component)]
@@ -107,10 +107,10 @@ impl ObstaclePlugin {
             transform.rotation = Quat::from_rotation_z(*angle);
 
             transform.translation.x +=
-                common::ease_out_sine(direction.x * velocity.vx * dt);
+                utils::ease_out_sine(direction.x * velocity.vx * dt);
 
             transform.translation.y +=
-                common::ease_out_sine(direction.y * velocity.vy * dt);
+                utils::ease_out_sine(direction.y * velocity.vy * dt);
         }
     }
 

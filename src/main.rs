@@ -1,18 +1,22 @@
 mod common;
+mod enemies;
 mod graphics;
 mod obstacles;
 mod player;
 mod projectiles;
+mod ray;
 mod state;
 
 #[cfg(debug_assertions)]
 mod debug;
+mod utils;
 
 use bevy::{
     prelude::*,
     render::{camera::WindowOrigin, texture::ImageSettings},
     window::WindowMode,
 };
+use enemies::EnemiesPlugin;
 use graphics::GraphicsPlugin;
 use obstacles::ObstaclePlugin;
 use player::PlayerPlugin;
@@ -46,7 +50,8 @@ fn main() {
         .add_plugin(GraphicsPlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(ProjectilesPlugin)
-        .add_plugin(ObstaclePlugin);
+        .add_plugin(ObstaclePlugin)
+        .add_plugin(EnemiesPlugin);
 
     #[cfg(debug_assertions)]
     app.add_plugin(DebugPlugin);

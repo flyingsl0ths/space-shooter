@@ -1,11 +1,12 @@
 use bevy::{prelude::*, sprite::collide_aabb::collide};
 
 use crate::{
-    common::{self, Collider},
+    common::{Collider, Velocity},
     graphics::TexturesSheets,
     obstacles::{spawn_small_obstacles, Obstacle},
     player::Cursor,
     state::GameState,
+    utils,
 };
 
 #[derive(Component, Reflect, Default)]
@@ -39,7 +40,7 @@ impl ProjectilesPlugin {
             &mut Transform,
             &mut Bullet,
             &mut Collider,
-            &common::Velocity,
+            &Velocity,
         )>,
         time: Res<Time>,
     ) {
@@ -54,7 +55,7 @@ impl ProjectilesPlugin {
             transform.translation.y += bullet.direction.y * velocity.vy * dt;
 
             let bullet_size =
-                common::ease_in_out_sine(bullet.duration.percent_left());
+                utils::ease_in_out_sine(bullet.duration.percent_left());
 
             transform.scale = Vec3::new(bullet_size, bullet_size, 0.);
 

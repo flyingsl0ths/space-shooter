@@ -1,13 +1,13 @@
 use bevy::prelude::*;
 use bevy::sprite::collide_aabb::collide;
 
+use crate::obstacles::Obstacle;
+use crate::projectiles::Bullet;
 use crate::{
-    common::{out_of_bounds_x, out_of_bounds_y, Collider, Velocity},
+    common::{Collider, Velocity},
     graphics::{self, TexturesSheets},
-    obstacles::Obstacle,
-    projectiles::Bullet,
     state::GameState,
-    HEIGHT, WIDTH,
+    utils, HEIGHT, WIDTH,
 };
 
 #[derive(Component, Reflect, Default)]
@@ -263,7 +263,7 @@ impl PlayerPlugin {
 
         let target = transform.translation + Vec3::new(offset_x, 0., 0.);
         if !(Self::check_collisions(target, *collider, &obstacles_query)
-            || out_of_bounds_x(target.x, collider.width / 2.))
+            || utils::out_of_bounds_x(target.x, collider.width / 2.))
         {
             transform.translation = target;
             if offset_x != 0. {
@@ -273,7 +273,7 @@ impl PlayerPlugin {
 
         let target = transform.translation + Vec3::new(0., offset_y, 0.);
         if !(Self::check_collisions(target, *collider, &obstacles_query)
-            || out_of_bounds_y(target.y, collider.height / 2.))
+            || utils::out_of_bounds_y(target.y, collider.height / 2.))
         {
             transform.translation = target;
             if offset_y != 0. {
@@ -311,57 +311,63 @@ impl PlayerPlugin {
         ts: Res<TexturesSheets>,
         mut cursor_query: Query<&mut Cursor>,
         input_target_query: Query<&Collider, With<Player>>,
-        mut commands: Commands,
+        commands: Commands,
     ) {
         let mut cursor = cursor_query.single_mut();
 
         if !cursor.fired && buttons.pressed(MouseButton::Left) {
             cursor.fired = true;
-
-            let damage = 10.;
-
-            let sprite = TextureAtlasSprite::new(0);
-
-            let target_collider = input_target_query.single();
-
-            let direction = Vec2::new(
-                cursor.computed_angle.cos(),
-                cursor.computed_angle.sin(),
-            );
-
-            let mut transform: Transform = Transform::from_xyz(
-                cursor.last_target_pos.x
-                    + direction.x * (target_collider.width / 2.),
-                cursor.last_target_pos.y
-                    + direction.y * (target_collider.height / 2.),
-                1.,
-            );
-
-            transform.rotation = Quat::from_rotation_z(cursor.actual_angle);
-
-            let width = 9.;
-            let height = 37.;
-
-            commands
-                .spawn_bundle(SpriteSheetBundle {
-                    sprite,
-                    texture_atlas: ts.projectiles.clone(),
-                    transform,
-                    ..Default::default()
-                })
-                .insert(Bullet {
-                    damage,
-                    direction,
-                    duration: Timer::from_seconds(1.7, false),
-                })
-                .insert(Collider {
-                    height,
-                    width,
-                    offset: Some(Vec2::new(width / 2., height / 2.)),
-                })
-                .insert(Velocity { vx: 200., vy: 200. })
-                .insert(Name::new("Bullet"));
+            Self::spawn_bullet(&cursor, input_target_query, ts, commands);
         }
+    }
+
+    pub fn spawn_bullet(
+        cursor: &Mut<Cursor>,
+        input_target_query: Query<&Collider, With<Player>>,
+        ts: Res<TexturesSheets>,
+        mut commands: Commands,
+    ) {
+        let damage = 10.;
+
+        let sprite = TextureAtlasSprite::new(0);
+
+        let target_collider = input_target_query.single();
+
+        let direction =
+            Vec2::new(cursor.computed_angle.cos(), cursor.computed_angle.sin());
+
+        let mut transform: Transform = Transform::from_xyz(
+            cursor.last_target_pos.x
+                + direction.x * (target_collider.width / 2.),
+            cursor.last_target_pos.y
+                + direction.y * (target_collider.height / 2.),
+            1.,
+        );
+
+        transform.rotation = Quat::from_rotation_z(cursor.actual_angle);
+
+        let width = 9.;
+        let height = 37.;
+
+        commands
+            .spawn_bundle(SpriteSheetBundle {
+                sprite,
+                texture_atlas: ts.projectiles.clone(),
+                transform,
+                ..Default::default()
+            })
+            .insert(Bullet {
+                damage,
+                direction,
+                duration: Timer::from_seconds(1.7, false),
+            })
+            .insert(Collider {
+                height,
+                width,
+                offset: Some(Vec2::new(width / 2., height / 2.)),
+            })
+            .insert(Velocity { vx: 200., vy: 200. })
+            .insert(Name::new("Bullet"));
     }
 
     fn process_mouse_movement(
